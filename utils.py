@@ -15,7 +15,10 @@ from torch import nn, optim
 from torch.autograd import Variable
 
 def data_transforms(phase = None):
-    
+    TEST = 'test'
+    TRAIN = 'train'
+    VAL ='val'
+
     if phase == TRAIN:
 
         data_T = T.Compose([
