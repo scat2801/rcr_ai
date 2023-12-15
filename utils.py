@@ -1,96 +1,39 @@
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+import torch
 import os
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import mixed_precision
+import matplotlib.pyplot as plt
+import torch.nn.functional as F 
+from torch import nn,optim
+from torchvision import transforms as T,datasets,models
+from torchvision.utils import make_grid
+from torch.utils.data import DataLoader
+from collections import OrderedDict
+from tqdm import tqdm
+pd.options.plotting.backend = "plotly"
+from torch import nn, optim
+from torch.autograd import Variable
 
-def plot_loss_curves(history):
-  """
-  Returns separate loss curves for training and validation metrics.
-
-  Args:
-    history: TensorFlow model History object
-  """ 
-  loss = history.history['loss']
-  val_loss = history.history['val_loss']
-
-  accuracy = history.history['binary_accuracy']
-  val_accuracy = history.history['val_binary_accuracy']
-
-  epochs = range(len(history.history['loss']))
-
-  # Plot loss
-  plt.plot(epochs, loss, label='training_loss')
-  plt.plot(epochs, val_loss, label='val_loss')
-  plt.title('Loss')
-  plt.xlabel('Epochs')
-  plt.legend()
-
-  # Plot accuracy
-  plt.figure()
-  plt.plot(epochs, accuracy, label='training_accuracy')
-  plt.plot(epochs, val_accuracy, label='val_accuracy')
-  plt.title('Accuracy')
-  plt.xlabel('Epochs')
-  plt.legend();
-
-
-
-def show_data(image_batch, label_batch,dataset_name):
-    plt.figure(figsize=(15, 6))
-    plt.suptitle(dataset_name, fontsize=16)
-    for n in range(10):
-        ax = plt.subplot(2, 5, n + 1)
-        plt.imshow(image_batch[n])
-        if label_batch[n]:
-            plt.title("PNEUMONIA")
-        else:
-            plt.title("NORMAL")
-        plt.axis("off")
-
-def compare_historys(original_history, new_history, initial_epochs=5):
-    """
-    Compares two TensorFlow model History objects.
+def data_transforms(phase = None):
     
-    Args:
-      original_history: History object from original model (before new_history)
-      new_history: History object from continued model training (after original_history)
-      initial_epochs: Number of epochs in original_history (new_history plot starts from here) 
-    """
+    if phase == TRAIN:
+
+        data_T = T.Compose([
+            
+                T.Resize(size = (256,256)),
+                T.RandomRotation(degrees = (-20,+20)),
+                T.CenterCrop(size=224),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        ])
     
-    # Get original history measurements
-    acc = original_history.history["binary_accuracy"]
-    loss = original_history.history["loss"]
+    elif phase == TEST or phase == VAL:
 
-    val_acc = original_history.history["val_binary_accuracy"]
-    val_loss = original_history.history["val_loss"]
+        data_T = T.Compose([
 
-    # Combine original history with new history
-    total_acc = acc + new_history.history["binary_accuracy"]
-    total_loss = loss + new_history.history["loss"]
-
-    total_val_acc = val_acc + new_history.history["val_binary_accuracy"]
-    total_val_loss = val_loss + new_history.history["val_loss"]
-
-    # Make plots
-    plt.figure(figsize=(8, 8))
-    plt.subplot(2, 1, 1)
-    plt.plot(total_acc, label='Training Accuracy')
-    plt.plot(total_val_acc, label='Validation Accuracy')
-    plt.plot([initial_epochs-1, initial_epochs-1],
-              plt.ylim(), label='Start Fine Tuning') # reshift plot around epochs
-    plt.legend(loc='lower right')
-    plt.title('Training and Validation Accuracy')
-
-    plt.subplot(2, 1, 2)
-    plt.plot(total_loss, label='Training Loss')
-    plt.plot(total_val_loss, label='Validation Loss')
-    plt.plot([initial_epochs-1, initial_epochs-1],
-              plt.ylim(), label='Start Fine Tuning') # reshift plot around epochs
-    plt.legend(loc='upper right')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('epoch')
-    plt.show()
+                T.Resize(size = (224,224)),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        ])
+        
+    return data_T
