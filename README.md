@@ -1,3 +1,3 @@
-Helper functions for transfer learning example 
+Data augmentation for CXR pneumonia CNN model training
 
 RCR AI Course 2023
