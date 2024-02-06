@@ -1,3 +1,3 @@
 Data augmentation for CXR pneumonia CNN model training
 
-RCR AI Course 2023
+RCR AI Course 2024
